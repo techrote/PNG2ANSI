@@ -15,13 +15,13 @@ test("schema v2 defaults match the Python reference contract",()=>{
   assert.deepEqual(plain(value.canvas),{columns:80,rows:40,cell_width:8,cell_height:16,sample_width:4,sample_height:8,font_size:14,resampler:"lanczos"});
   assert.deepEqual(plain(value.fit),{foreground_candidates:6,background_candidates:5});
   assert.deepEqual(plain(value.derez),{enabled:false,width:160,height:160});
-  assert.deepEqual(plain(value.nl_filter),{enabled:false,mode:"edge-enhancement",radius:1,alpha:.9});
-  assert.equal(value.image.sharpness,1.18);assert.equal(value.industrial.accent_weight,.70);
+  assert.deepEqual(plain(value.nl_filter),{enabled:true,mode:"edge-enhancement",radius:1,alpha:.9});
+  assert.deepEqual(plain(value.image),{brightness:1,contrast:.85,saturation:1.8,gamma:1,sharpness:1.2});assert.equal(value.industrial.accent_weight,.70);
 });
 
 test("v1 profiles migrate while strict nested validation remains transactional",()=>{
   const value=api.configFrom({schema_version:1,canvas:{columns:96},image:{gamma:1.4},fit:{background_candidates:4}});
-  assert.equal(value.schema_version,2);assert.equal(value.canvas.columns,96);assert.equal(value.canvas.rows,40);assert.equal(value.image.gamma,1.4);assert.equal(value.fit.background_candidates,4);assert.equal(value.derez.enabled,false);
+  assert.equal(value.schema_version,2);assert.equal(value.canvas.columns,96);assert.equal(value.canvas.rows,40);assert.equal(value.image.gamma,1.4);assert.equal(value.fit.background_candidates,4);assert.equal(value.derez.enabled,false);assert.equal(value.nl_filter.enabled,true);
   assert.throws(()=>api.configFrom({canvas:{mystery:1}}),/unknown configuration key/);
   assert.throws(()=>api.configFrom({canvas:{columns:4}}),/columns/);
   assert.throws(()=>api.configFrom({fit:{background_candidates:12}}),/background_candidates/);
@@ -35,7 +35,9 @@ test("candidate ranges and deterministic workload ceiling are safe",()=>{
   const maximum=api.configFrom({fit:{foreground_candidates:12,background_candidates:8}});
   assert.ok(api.workloadUnits(maximum,glyphs)<=oldBaseline*1.5);assert.doesNotThrow(()=>api.validateWorkload(maximum,glyphs));
   const oversized=api.configFrom({canvas:{columns:512,rows:512},fit:{foreground_candidates:12,background_candidates:8}});
-  assert.throws(()=>api.validateWorkload(oversized,glyphs),/safe limit.*reduce columns, rows, sample grid, vocabulary size, or colour candidates/i);
+  assert.throws(()=>api.validateWorkload(oversized,glyphs),/current limit.*reduce columns, rows, sample grid, vocabulary size, or colour candidates/i);
+  const oversizedUnits=api.workloadUnits(oversized,glyphs);assert.throws(()=>api.validateWorkload(oversized,glyphs,oversizedUnits-1),/GO \/ OVERRIDE/);assert.equal(api.validateWorkload(oversized,glyphs,oversizedUnits),oversizedUnits);
+  assert.throws(()=>api.validateWorkload(maximum,glyphs,0),/positive safe integer/);
   assert.doesNotThrow(()=>api.validateWorkload(api.configFrom({canvas:{columns:32,rows:16}}),glyphs));
 });
 

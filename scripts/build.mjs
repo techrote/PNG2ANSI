@@ -5,9 +5,10 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path, encoding = "utf8") => readFile(resolve(root, path), encoding);
-const [template, css, coreRaw, workerRaw, appRaw, font, quickstart] = await Promise.all([
+const [template, css, coreRaw, workerRaw, appRaw, font, sample, quickstart] = await Promise.all([
   read("src/index.html"), read("src/styles.css"), read("src/core.js"),
-  read("src/worker.js"), read("src/app.js"), read("assets/DejaVuSansMono.ttf", null), read("QUICKSTART.md")
+  read("src/worker.js"), read("src/app.js"), read("assets/DejaVuSansMono.ttf", null),
+  read("assets/panel_box_cyberpunk_machinery_6LKC6GX0.png", null), read("QUICKSTART.md")
 ]);
 const escapeHtml = text => text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 const inlineMarkdown = text => escapeHtml(text).replace(/`([^`]+)`/g, "<code>$1</code>");
@@ -17,9 +18,12 @@ const quickstartHtml = quickstart.trim().split(/\r?\n\s*\r?\n/).map(block => {
   return `<p>${inlineMarkdown(text)}</p>`;
 }).join("\n");
 const font64 = font.toString("base64");
+const sample64 = sample.toString("base64");
 const core = coreRaw.replaceAll("__FONT_BASE64__", font64);
 const worker = workerRaw.replace("/*__CORE__*/", core);
-const app = appRaw.replace("/*__WORKER_SOURCE__*/\"\"", JSON.stringify(worker));
+const app = appRaw
+  .replace("/*__WORKER_SOURCE__*/\"\"", JSON.stringify(worker))
+  .replace("/*__SAMPLE_IMAGE__*/\"\"", JSON.stringify(sample64));
 const sourceHash = createHash("sha256").update(template).update(css).update(core).update(worker).update(app).digest("hex");
 const html = template
   .replace("/*__SOURCE_HASH__*/", sourceHash)

@@ -10,10 +10,10 @@
   const DEFAULTS = {
     schema_version: 2, style: "photographic", vocabulary: "full-cp437",
     canvas: { columns:80, rows:40, cell_width:8, cell_height:16, sample_width:4, sample_height:8, font_size:14, resampler:"lanczos" },
-    image: { brightness:1, contrast:1, saturation:1, gamma:1, sharpness:1.18 },
+    image: { brightness:1, contrast:.85, saturation:1.8, gamma:1, sharpness:1.2 },
     fit: { foreground_candidates:6, background_candidates:5 },
     derez: { enabled:false, width:160, height:160 },
-    nl_filter: { enabled:false, mode:"edge-enhancement", radius:1, alpha:.9 },
+    nl_filter: { enabled:true, mode:"edge-enhancement", radius:1, alpha:.9 },
     industrial: {
       structure_blur:0.85, texture_blur:1.85, edge_threshold:11, edge_range:57,
       texture_threshold:24, texture_range:62, highlight_threshold:138, highlight_range:110,
@@ -85,7 +85,10 @@
     const fitting=config.style==="industrial"?glyphCount*15*3:Math.min(GLYPH_SHORTLIST,glyphCount)*config.fit.foreground_candidates*config.fit.background_candidates*3;
     return Math.trunc(cells*(base+fitting));
   }
-  function validateWorkload(config,glyphCount){const units=workloadUnits(config,glyphCount);if(units>MAX_WORK_UNITS)throw new Error(`Estimated workload ${units.toLocaleString("en-US")} exceeds the safe limit ${MAX_WORK_UNITS.toLocaleString("en-US")}; reduce columns, rows, sample grid, vocabulary size, or colour candidates.`);return units;}
+  function validateWorkload(config,glyphCount,maxWorkUnits=MAX_WORK_UNITS){
+    if(!Number.isSafeInteger(maxWorkUnits)||maxWorkUnits<1)throw new Error("Max work units must be a positive safe integer");
+    const units=workloadUnits(config,glyphCount);if(units>maxWorkUnits)throw new Error(`Estimated workload ${units.toLocaleString("en-US")} exceeds the current limit ${maxWorkUnits.toLocaleString("en-US")}; reduce columns, rows, sample grid, vocabulary size, or colour candidates, raise the limit, or use GO / OVERRIDE.`);return units;
+  }
   function uniqueCodes(text) {
     const result=[]; for (const char of text) { const code=codeOf(char); if (code >= 0 && !result.includes(code)) result.push(code); } return result;
   }
@@ -231,7 +234,7 @@
   }
   function ansiBytes(masks,result,config){const chunks=[];let current="";for(let i=0;i<result.chosen.length;i++){const f=result.fg[i],b=result.bg[i],state=`${f},${b}`;if(state!==current){for(const ch of `\x1b[${f>=8?1:22};${30+f%8};${40+b}m`)chunks.push(ch.charCodeAt(0));current=state;}chunks.push(masks.codes[result.chosen[i]]);}for(const ch of "\x1b[0m")chunks.push(ch.charCodeAt(0));return new Uint8Array(chunks);}
   function preview(masks,result,config){const c=config.canvas,w=c.columns*c.cell_width,h=c.rows*c.cell_height,cv=new OffscreenCanvas(w,h),ctx=cv.getContext("2d"),image=ctx.createImageData(w,h),p=image.data;for(let cell=0;cell<result.chosen.length;cell++){const cx=cell%c.columns,cy=Math.floor(cell/c.columns),mask=masks.hi[result.chosen[cell]],f=PALETTE[result.fg[cell]],b=PALETTE[result.bg[cell]];for(let y=0;y<c.cell_height;y++)for(let x=0;x<c.cell_width;x++){const m=mask[y*c.cell_width+x],at=((cy*c.cell_height+y)*w+cx*c.cell_width+x)*4;for(let k=0;k<3;k++)p[at+k]=Math.round(b[k]+m*(f[k]-b[k]));p[at+3]=255;}}ctx.putImageData(image,0,0);return cv;}
-  async function convert(bitmap,config,codes,progress){config=configFrom(config);const masks=await glyphMasks(codes,config.canvas),workUnits=validateWorkload(config,masks.codes.length),source=preprocess(bitmap,config),result=config.style==="industrial"?industrialFit(source,masks,config,progress):photoFit(source,masks,config,progress),ansi=ansiBytes(masks,result,config),canvas=preview(masks,result,config),png=await canvas.convertToBlob({type:"image/png"});return{ansi,png,width:canvas.width,height:canvas.height,glyphCount:masks.codes.length,workUnits};}
+  async function convert(bitmap,config,codes,progress,workPolicy={}){config=configFrom(config);const masks=await glyphMasks(codes,config.canvas),maxWorkUnits=workPolicy.maxWorkUnits??MAX_WORK_UNITS,workUnits=workPolicy.overrideWorkLimit?workloadUnits(config,masks.codes.length):validateWorkload(config,masks.codes.length,maxWorkUnits),source=preprocess(bitmap,config),result=config.style==="industrial"?industrialFit(source,masks,config,progress):photoFit(source,masks,config,progress),ansi=ansiBytes(masks,result,config),canvas=preview(masks,result,config),png=await canvas.convertToBlob({type:"image/png"});return{ansi,png,width:canvas.width,height:canvas.height,glyphCount:masks.codes.length,workUnits};}
 
   scope.PNG2ANSI={DEFAULTS,LIMITS,PALETTE,CP437,GLYPH_SHORTLIST,MAX_WORK_UNITS,clone,configFrom,migrateConfig,mergeConfig,validateConfig,workloadUnits,validateWorkload,nlFilterPixels,vocabularies,referenceVocabulary,glyphStrip,ansiBytes,convert};
 })(globalThis);

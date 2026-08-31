@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="cyber-fab">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -13,14 +13,23 @@
 </head>
 <body>
   <header class="masthead">
-    <div class="brand"><span class="brand-mark">P2A</span><div><h1>PNG2ANSI</h1><p>Classic CP437 image fitter · entirely offline</p></div></div>
-    <div class="privacy"><span></span>No uploads. No network. No metadata footer.</div>
+    <div class="brand"><span class="brand-mark">P2A</span><div><h1>PNG2ANSI</h1><p>CP437 RASTER FITTING CONSOLE // OFFLINE</p></div></div>
+    <div class="header-tools">
+      <label class="theme-control" for="theme-select"><span>THEME://</span><select id="theme-select">
+        <option value="industrial-chase">industrial-chase</option>
+        <option value="magical-forest">magical-forest</option>
+        <option value="spectral-gremlin">spectral-gremlin</option>
+        <option value="cyber-fab" selected>cyber-fab</option>
+        <option value="basic-bios">basic-bios</option>
+      </select></label>
+      <div class="privacy"><span></span>LOCAL / NO NETWORK / NO SAUCE</div>
+    </div>
   </header>
 
   <main>
     <section class="workbench" aria-label="Conversion workbench">
       <article class="viewport source-panel">
-        <div class="panel-head"><div><span class="eyebrow">01 / input</span><h2>Source raster</h2></div><label class="button primary">Choose image<input id="source-file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp"></label></div>
+        <div class="panel-head"><div><span class="eyebrow">01 / input</span><h2>Source raster</h2></div><div class="source-actions"><button id="load-sample" title="Load the bundled cyberpunk machinery sample">LOAD SAMPLE</button><label class="button primary">CHOOSE IMAGE<input id="source-file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp"></label></div></div>
         <div id="source-stage" class="stage empty"><div class="empty-state"><div class="drop-icon">＋</div><strong>Drop a source image</strong><small>PNG, JPEG, WebP or BMP</small></div><img id="source-preview" alt="Source preview"></div>
         <div id="source-meta" class="meta-row"><span>No image loaded</span><span>Local memory only</span></div>
       </article>
@@ -38,20 +47,24 @@
     </section>
 
     <section class="control-deck">
-      <div class="control-title"><div><span class="eyebrow">03 / tune</span><h2>Conversion console</h2></div><div class="profile-actions"><label class="button">Import profile<input id="config-file" type="file" accept="application/json,.json"></label><button id="reset-config">Reset defaults</button></div></div>
+      <div class="control-title">
+        <div class="console-heading"><div><span class="eyebrow">03 / tune</span><h2>Conversion console</h2></div>
+          <div class="workload-row">
+            <span>LOAD ESTIMATE</span><strong id="workload-estimate"></strong>
+            <label class="work-limit" title="Local browser safety ceiling; this is not saved in portable conversion profiles."><span>MAX WORK UNITS</span><input id="max-work-units" type="number" min="1" max="9007199254740991" step="1000000" value="125000000" inputmode="numeric"></label>
+            <button id="override-go" class="override-go" disabled title="Ignore the current work ceiling for one conversion. This may take a long time or make the tab unresponsive.">GO / OVERRIDE</button>
+            <button id="safe-max-candidates" class="inline-action">SAFE 12×8</button><span id="worker-health" class="worker-health">WORKER IDLE</span>
+          </div>
+        </div>
+        <div class="profile-actions"><label class="button">Import profile<input id="config-file" type="file" accept="application/json,.json"></label><button id="reset-config">Reset defaults</button></div>
+      </div>
       <div class="control-grid">
         <div class="control-column">
-          <h3>Basic</h3>
           <div id="basic-controls" class="field-grid"></div>
         </div>
         <div class="vocab-column">
-          <div class="vocab-head"><h3>Glyph vocabulary</h3><span id="glyph-count">224 source glyphs</span></div>
+          <div class="vocab-head"><h3>Glyph vocabulary</h3><div class="vocab-actions"><span id="glyph-count">224 source glyphs</span><label class="button vocab-add">ADD<input id="reference-files" type="file" multiple accept=".ans,image/png" title="Add local ANSI references and optional matching PNG previews"></label></div></div>
           <pre id="glyph-strip" class="glyph-strip" aria-label="Selected glyph vocabulary"></pre>
-          <div class="workload-row"><span>Estimated fitting load</span><strong id="workload-estimate"></strong><button id="safe-max-candidates" class="inline-action">Use safe 12×8 maximum</button><span id="worker-health" class="worker-health">worker idle</span></div>
-          <label class="reference-drop">Add local ANSI references
-            <input id="reference-files" type="file" multiple accept=".ans,image/png">
-            <small>.ANS defines glyphs · matching .PNG is a label preview only</small>
-          </label>
           <div id="reference-cards" class="reference-cards"></div>
           <button id="clear-references" class="text-button" hidden>Clear all references</button>
         </div>
@@ -69,7 +82,7 @@
       </details>
     </section>
   </main>
-  <footer><span>PNG2ANSI-web v0.2.0</span><span>CP437 bytes · classic SGR · DejaVu Sans Mono</span></footer>
+  <footer><span>PNG2ANSI-web v0.4.0</span><span>CP437 bytes · classic SGR · DejaVu Sans Mono</span></footer>
   <script>/*__CORE__*/</script>
   <script>/*__APP__*/</script>
 </body>

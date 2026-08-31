@@ -14,7 +14,8 @@ workers, rendering, and downloads stay inside the browser process.
 
 1. Download `PNG2ANSI-web.html`.
 2. Open it in a current Windows Terminal-era browser (Edge, Chrome, or Firefox).
-3. Choose or drop a source image.
+3. Choose or drop a source image, or select **Load sample** to try the embedded
+   cyberpunk machinery panel without an additional file.
 4. Select `photographic` for direct colour fitting or `industrial` for sparse,
    structural texture.
 5. Download the `.ans` and its `.ans.png` preview.
@@ -27,6 +28,11 @@ artifact's offline Help section.
 The default canvas is 80×40. Output consists only of CP437 cell bytes and
 classic SGR colour sequences for the Windows Terminal 16-colour palette. It
 does not append SAUCE or any visible metadata/footer.
+
+The compact interface includes five presentation themes inspired by modern
+ANSI art: `industrial-chase`, `magical-forest`, `spectral-gremlin`,
+`cyber-fab`, and a monochrome `basic-bios` layout. The selected theme is saved
+locally and never changes conversion output or portable profiles.
 
 ## Local references
 
@@ -46,7 +52,11 @@ is `png2ansi.schema.json`.
 Photographic fitting defaults to 6 foreground and 5 background candidates.
 Inputs commit transactionally, foreground is limited to 12, and background is
 limited to the eight legal classic colours. Each cell shortlists 32 glyphs and
-the UI blocks estimated work above 125,000,000 units before starting a worker.
+the UI initially blocks estimated work above 125,000,000 units before starting
+a worker. The browser-only **Max work units** field can raise or lower that
+ceiling. **GO / OVERRIDE** bypasses it for one conversion and may make the tab
+unresponsive for a long-running fit; edits made afterward return to the normal
+protected workflow. Neither control is written to shared JSON profiles.
 
 ## Develop
 

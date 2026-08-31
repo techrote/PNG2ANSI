@@ -24,6 +24,23 @@ Repeated `--reference-ansi` inputs create a frequency-ordered CP437 union.
 The converter rejects estimated work above 125,000,000 units with guidance to
 reduce canvas size, sampling, vocabulary, or photographic candidates.
 
+## Web-only runtime controls
+
+These controls manage browser execution and are deliberately excluded from the
+versioned JSON profile, so imported and exported profiles remain portable to
+pyANSI.
+
+| Control | Default | Range / values | Effect | Important interactions |
+| --- | ---: | --- | --- | --- |
+| Theme | `cyber-fab` | industrial-chase, magical-forest, spectral-gremlin, cyber-fab, basic-bios | Changes interface colours, grids, borders, and ANSI-art ornament only. | Stored in local browser storage; never changes fitting or output. |
+| Max work units | 125,000,000 | 1–9,007,199,254,740,991 | Sets the automatic conversion safety ceiling. | Stored locally. Lower values reject more configurations; raising it may allow lengthy jobs. |
+| GO / OVERRIDE | off | one-shot button | Starts the current conversion without comparing its estimate to the ceiling. | Deliberately red. It does not disable cancellation or stale-job rejection, and any subsequent edit uses the ceiling normally. |
+
+The estimate is deterministic, based on canvas cells, sample grid, glyph count,
+style, and candidate counts. It predicts fitting work rather than wall-clock
+seconds. Override only when the current browser tab can be left busy; extremely
+large conversions may exhaust memory or become temporarily unresponsive.
+
 ## Derez and NL Filter
 
 | Setting | Default | Range / values | Visual effect | Cost and interactions |
@@ -31,7 +48,7 @@ reduce canvas size, sampling, vocabulary, or photographic candidates.
 | `derez.enabled` | false | boolean | Enables an exact intermediate raster before other adjustments. | Useful for suppressing details too fine for ANSI. |
 | `derez.width` | 160 | 16–2048 | Intermediate pixel width. | Never exceeds source width; width×height may not exceed 4,194,304. |
 | `derez.height` | 160 | 16–2048 | Intermediate pixel height. | Independent dimensions may intentionally alter aspect ratio. |
-| `nl_filter.enabled` | false | boolean | Enables seven-sample nonlinear preprocessing. | Runs after Derez and before tonal controls. |
+| `nl_filter.enabled` | true | boolean | Enables seven-sample nonlinear preprocessing. | Runs after Derez and before tonal controls. |
 | `nl_filter.mode` | `edge-enhancement` | alpha-trimmed-mean, optimal-estimation, edge-enhancement | Despeckles, adaptively smooths, or sharpens local edges. | Alpha meaning depends on mode. |
 | `nl_filter.radius` | 1.0 | 0.33–1 | Size/mix of the seven-sample neighbourhood. | 0.33 is nearly neutral; 1 uses the complete neighbourhood. |
 | `nl_filter.alpha` | 0.9 | 0–1 | Trim amount, smoothing strength, or edge strength. | Edge 0.9 is intentionally strong; reduce it if halos dominate. |
@@ -47,10 +64,10 @@ contrast.
 | Setting | Default | Range | Visual effect | Cost and interactions |
 | --- | ---: | --- | --- | --- |
 | `image.brightness` | 1.0 | 0–4 | Scales overall light. | Raise cautiously before highlights collapse to white. |
-| `image.contrast` | 1.0 | 0–4 | Separates dark and light regions. | Often the most effective photographic control. |
-| `image.saturation` | 1.0 | 0–4 | Changes hue intensity. | Industrial accent ink depends on saturation. |
+| `image.contrast` | 0.85 | 0–4 | Separates dark and light regions. | Often the most effective photographic control. |
+| `image.saturation` | 1.8 | 0–4 | Changes hue intensity. | Industrial accent ink depends on saturation. |
 | `image.gamma` | 1.0 | 0.1–4 | Adjusts midtones; above 1 brightens them. | More selective than brightness. |
-| `image.sharpness` | 1.18 | 0–4 | Emphasizes detail before cell fitting. | Combine carefully with NL edge enhancement to avoid halos. |
+| `image.sharpness` | 1.2 | 0–4 | Emphasizes detail before cell fitting. | Combine carefully with NL edge enhancement to avoid halos. |
 
 ## Photographic fitting
 
