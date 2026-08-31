@@ -60,3 +60,8 @@ stale. It has no package dependencies and requires only Node.js.
 
 The font is DejaVu Sans Mono; its separate license is included in `assets/`.
 Application code is MIT licensed.
+
+Conversions are replaceable jobs: changing a setting cancels the obsolete
+worker immediately, coalesces further changes for 240 ms, and runs only the
+latest configuration. This keeps rapid slider edits from building a queue of
+CPU-heavy conversions.

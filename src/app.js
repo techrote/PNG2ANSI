@@ -1,7 +1,7 @@
 "use strict";
 const WORKER_SOURCE = /*__WORKER_SOURCE__*/"";
 const $ = selector => document.querySelector(selector);
-const worker = new Worker(URL.createObjectURL(new Blob([WORKER_SOURCE], {type:"text/javascript"})));
+let worker = null;
 let config = PNG2ANSI.configFrom(), sourceFile = null, sourceUrl = null, resultUrls = [], refs = [], job = 0, timer = 0, lastResult = null;
 
 const basic = [
@@ -50,18 +50,33 @@ function renderControls() {
 function currentCodes(){return refs.length?PNG2ANSI.referenceVocabulary(refs.map(ref=>ref.bytes)):PNG2ANSI.vocabularies()[config.vocabulary];}
 function updateVocabulary(){const codes=currentCodes();$("#glyph-strip").textContent=PNG2ANSI.glyphStrip(codes);$("#glyph-count").textContent=`${codes.length} source glyphs${refs.length?" · references override preset":""}`;}
 function setStatus(text,kind=""){$("#status").textContent=text;$("#status-dot").className=`status-dot ${kind}`;}
-function schedule(){clearTimeout(timer);if(!sourceFile)return;timer=setTimeout(convert,240);}
-async function convert(){
-  const id=++job;setStatus("Preparing worker…","busy");$("#progress").style.width="2%";lastResult=null;toggleDownloads(false);
-  try{const bitmap=await createImageBitmap(sourceFile);worker.postMessage({id,bitmap,config:PNG2ANSI.clone(config),codes:currentCodes()},[bitmap]);}
-  catch(error){setStatus(error.message,"error");}
+function stopWorker(){if(worker){worker.terminate();worker=null;}}
+function makeWorker(id){
+  const url=URL.createObjectURL(new Blob([WORKER_SOURCE],{type:"text/javascript"})),instance=new Worker(url);URL.revokeObjectURL(url);
+  instance.onmessage=handleWorkerMessage;
+  instance.onerror=event=>{if(id!==job)return;stopWorker();setStatus(`Conversion worker stopped: ${event.message||"unknown error"}`,"error");$("#progress").style.width="0";};
+  return instance;
 }
-worker.onmessage=event=>{
+function schedule(){
+  clearTimeout(timer);if(!sourceFile)return;
+  const id=++job;stopWorker();lastResult=null;toggleDownloads(false);setStatus("Queued latest settings…","busy");$("#progress").style.width="1%";
+  timer=setTimeout(()=>convert(id),240);
+}
+async function convert(id){
+  if(id!==job)return;setStatus("Preparing worker…","busy");$("#progress").style.width="2%";
+  try{
+    const bitmap=await createImageBitmap(sourceFile);
+    if(id!==job){bitmap.close();return;}
+    worker=makeWorker(id);worker.postMessage({id,bitmap,config:PNG2ANSI.clone(config),codes:currentCodes()},[bitmap]);
+  }catch(error){if(id===job){stopWorker();setStatus(error.message,"error");$("#progress").style.width="0";}}
+}
+function handleWorkerMessage(event){
   const message=event.data;if(message.id!==job)return;
   if(message.type==="progress"){$("#progress").style.width=`${5+Math.round(message.value*88)}%`;setStatus(`Fitting cells · ${Math.round(message.value*100)}%`,"busy");return;}
-  if(message.type==="error"){setStatus(message.message,"error");$("#progress").style.width="0";return;}
+  if(message.type==="error"){stopWorker();setStatus(message.message,"error");$("#progress").style.width="0";return;}
+  stopWorker();
   resultUrls.forEach(URL.revokeObjectURL);resultUrls=[];const ansiBlob=new Blob([message.ansi],{type:"application/octet-stream"}),pngBlob=new Blob([message.png],{type:"image/png"}),previewUrl=URL.createObjectURL(pngBlob);resultUrls.push(previewUrl);$("#ansi-preview").src=previewUrl;$("#output-stage").classList.remove("empty");$("#progress").style.width="100%";setStatus(`${config.canvas.columns}×${config.canvas.rows} · ${message.glyphCount} masks`,"ready");lastResult={ansiBlob,pngBlob};toggleDownloads(true);window.__PNG2ANSI_TEST__.completed=(window.__PNG2ANSI_TEST__.completed||0)+1;
-};
+}
 function toggleDownloads(enabled){$("#download-ansi").disabled=!enabled;$("#download-png").disabled=!enabled;}
 function stem(name){return name.replace(/\.[^.]+$/i,"").toLowerCase();}
 async function loadSource(file){if(!file)return;sourceFile=file;if(sourceUrl)URL.revokeObjectURL(sourceUrl);sourceUrl=URL.createObjectURL(file);$("#source-preview").src=sourceUrl;$("#source-stage").classList.remove("empty");try{const bitmap=await createImageBitmap(file);$("#source-meta").firstElementChild.textContent=`${file.name} · ${bitmap.width}×${bitmap.height}`;bitmap.close();schedule();}catch(error){setStatus(`Image error: ${error.message}`,"error");}}
@@ -84,4 +99,4 @@ $("#download-config").addEventListener("click",()=>download(new Blob([JSON.strin
 $("#config-file").addEventListener("change",async event=>{try{config=PNG2ANSI.configFrom(JSON.parse(await event.target.files[0].text()));renderControls();schedule();setStatus("Profile imported",sourceFile?"busy":"ready");}catch(error){setStatus(`Profile error: ${error.message}`,"error");}});
 $("#reset-config").addEventListener("click",()=>{config=PNG2ANSI.configFrom();renderControls();schedule();});
 renderControls();
-window.__PNG2ANSI_TEST__={offline:true,version:"0.1.0",defaults:PNG2ANSI.clone(PNG2ANSI.DEFAULTS),get config(){return PNG2ANSI.clone(config)},get references(){return refs.length},get job(){return job},completed:0};
+window.__PNG2ANSI_TEST__={offline:true,version:"0.1.1",defaults:PNG2ANSI.clone(PNG2ANSI.DEFAULTS),get config(){return PNG2ANSI.clone(config)},get references(){return refs.length},get job(){return job},completed:0};

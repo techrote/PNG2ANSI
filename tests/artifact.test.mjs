@@ -18,7 +18,9 @@ test("tracked artifact is single-file and network-disabled", () => {
 test("worker jobs and UI debounce reject stale work", () => {
   assert.match(worker, /if\(id!==latest\)return/);
   assert.match(app, /if\(message\.id!==job\)return/);
-  assert.match(app, /setTimeout\(convert,240\)/);
+  assert.match(app, /timer=setTimeout\(\(\)=>convert\(id\),240\)/);
+  assert.match(app, /function stopWorker\(\)\{if\(worker\)\{worker\.terminate\(\)/);
+  assert.match(app, /const id=\+\+job;stopWorker\(\)/);
 });
 
 test("visible workflow and every schema field ship in the artifact", () => {
