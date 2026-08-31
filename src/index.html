@@ -47,6 +47,7 @@
         <div class="vocab-column">
           <div class="vocab-head"><h3>Glyph vocabulary</h3><span id="glyph-count">224 source glyphs</span></div>
           <pre id="glyph-strip" class="glyph-strip" aria-label="Selected glyph vocabulary"></pre>
+          <div class="workload-row"><span>Estimated fitting load</span><strong id="workload-estimate"></strong><button id="safe-max-candidates" class="inline-action">Use safe 12×8 maximum</button><span id="worker-health" class="worker-health">worker idle</span></div>
           <label class="reference-drop">Add local ANSI references
             <input id="reference-files" type="file" multiple accept=".ans,image/png">
             <small>.ANS defines glyphs · matching .PNG is a label preview only</small>
@@ -56,12 +57,19 @@
         </div>
       </div>
       <details class="advanced">
-        <summary><span>Advanced parameters</span><small>Every field in schema version 1</small></summary>
+        <summary><span>Advanced parameters</span><small>Every field in schema version 2</small></summary>
+        <div class="guidance-grid"><p id="derez-guidance"></p><p id="nl-guidance"></p></div>
         <div id="advanced-controls" class="field-grid advanced-grid"></div>
       </details>
     </section>
+    <section class="help-panel">
+      <details>
+        <summary><span>Offline help · quickstart</span><small>Practical tuning strategies</small></summary>
+        <div class="help-copy">/*__QUICKSTART__*/</div>
+      </details>
+    </section>
   </main>
-  <footer><span>PNG2ANSI-web v0.1.1</span><span>CP437 bytes · classic SGR · DejaVu Sans Mono</span></footer>
+  <footer><span>PNG2ANSI-web v0.2.0</span><span>CP437 bytes · classic SGR · DejaVu Sans Mono</span></footer>
   <script>/*__CORE__*/</script>
   <script>/*__APP__*/</script>
 </body>
